@@ -1,0 +1,20 @@
+{
+	"name": "8_explore_trip_data_green_parquet",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/discovery"
+		},
+		"content": {
+			"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=2020/month=01/',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    ) AS [result]\n\n\n--Identify the interred data types\n EXEC sp_describe_first_result_set N'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK ''raw/trip_data_green_parquet/year=2020/month=01/'',\n        FORMAT = ''PARQUET'',\n        DATA_SOURCE = ''nyc_taxi_data''\n    ) AS [result]\n'\n--Spicify custom data types \nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=2020/month=01/',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    ) \n    with(\n       VendorID  int,\n       lpep_pickup_datetime datetime2(7),\n       lpep_dropoff_datetime datetime2(7),\n       store_and_fwd_flag CHAR(1),\n       RatecodeID int,\n       PULocationID int,\n       DOLocationID int,\n       passenger_count int,\n       trip_distance FLOAT,\n       fare_amount FLOAT,\n       extra FLOAT,\n       mta_tax FLOAT,\n       tip_amount FLOAT,\n       tolls_amount FLOAT,\n       ehail_fee INT,\n       improvement_surcharge FLOAT,\n       total_amount FLOAT,\n       payment_type INT,\n       trip_type INT,\n       congestion_surcharge FLOAT\n    )AS [result]\n\n-- select only requried columns to reduse the cost\n\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=2020/month=01/',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    ) \n    with(\n       tip_amount FLOAT,\n       trip_type INT       \n    )AS [result]\n\n--Query data from folder using wildcard characters\nSELECT\n   top 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    )AS [result]\n\n-- use the filename()\nSELECT\n   result.filename() As [filename],\n   count(1) as recordcount\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    )AS [result]\nGROUP BY result.filename()\norder by 1\n-- use the filepath()\nSELECT\n   result.filepath() as [filepath],\n   result.filepath(1) as [YEAR] ,\n   result.filepath(2) as [MONTH],\n   count(1) as recordcount\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    )AS [result]\nGROUP BY result.filepath(1),result.filepath(2),result.filepath()\norder by 2,3 \n-- Query to get records from subfolders\nSELECT\n   top 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/**',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    )AS [result]\n\n-- use file path function to select certain files only\nSELECT\n   result.filepath() as [filepath],\n   result.filepath(1) as [YEAR] ,\n   result.filepath(2) as [MONTH],\n   count(1) as recordcount\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=*/month=*/*.parquet',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n    )AS [result]\nWHERE result.filepath(1) = 2020 AND result.filepath(2) = 02\nGROUP BY result.filepath(1),result.filepath(2),result.filepath()\norder by 2,3 ",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_discovery",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

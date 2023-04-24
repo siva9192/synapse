@@ -1,0 +1,17 @@
+{
+	"name": "external_data_processed",
+	"properties": {
+		"content": {
+			"query": "SELECT * FROM sys.dm_external_data_processed\n\nSELECT * FROM sys.configurations\nwhere name LIKE'Data Processed%'\n\nsp_set_data_processed_limit\n    @type = N'monthly',\n    @limit_tb = 2",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

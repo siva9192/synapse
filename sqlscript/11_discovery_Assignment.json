@@ -1,0 +1,20 @@
+{
+	"name": "11_discovery_Assignment",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/discovery"
+		},
+		"content": {
+			"query": "\nwith payment_type AS(\n    SELECT \n        payment_type\n        , [description]\n    FROM\n    OPENROWSET(\n        BULK 'raw/payment_type.json',\n        DATA_SOURCE = 'nyc_taxi_data',\n        FORMAT = 'CSV',\n        FIELDTERMINATOR = '0x0b',\n        FIELDQUOTE = '0x0b'        \n    ) \n    WITH(\n            jsonDoc varchar(max)1\n        )As payment_type\n        CROSS APPLY OPENJSON(jsonDoc)\n        With(\n            payment_type SMALLINT,\n            description varchar(20) '$.payment_type_desc'\n    ) AS payment\n)\n, taxi_zone AS(\n    SELECT \n        LocationID\n        , Borough\n        , Zone\n        , service_zone\n    FROM \n    OPENROWSET(\n        BULK 'https://synapse0001.dfs.core.windows.net/nyc-taxi-data/raw/taxi_zone.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0',\n        HEADER_ROW = TRUE\n    ) \n    WITH (\n        LocationID SMALLINT,\n        Borough VARCHAR(15),\n        Zone VARCHAR(50),\n        service_zone VARCHAR(15)\n    )AS [taxi_zone]\n)\n, trip_data AS (\n    SELECT\n        *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_parquet/year=2020/month=01/',\n        FORMAT = 'PARQUET',\n        DATA_SOURCE = 'nyc_taxi_data'\n        ) AS trip_data\n)\nselect \n    tz.Borough\n    , count(1) total_trips\n    ,Sum(CASE WHEN pt.description = 'Cash' THEN 1 ELSE 0 END) AS cash_trips\n    ,Sum(CASE WHEN pt.description = 'Credit card' THEN 1 ELSE 0 END) AS Credit_card_trips\n    ,CAST((Sum(CASE WHEN pt.description = 'Cash' THEN 1 ELSE 0 END)/CAST(COUNT(1) AS DECIMAl))*100 AS DECIMAL(5,2)) AS cash_trips_percentage\n    ,CAST((Sum(CASE WHEN pt.description = 'Credit card' THEN 1 ELSE 0 END)/CAST(COUNT(1) AS DECIMAl))*100 AS DECIMAL(5,2)) AS Credit_card_trips_percentage\n\nfrom \n    trip_data AS td\n    LEFT JOIN taxi_zone tz ON td.PULocationID = tz.LocationID\n    LEFT JOIN payment_type pt ON td.payment_type = pt.payment_type\nWHERE pt.description IN ('Cash','Credit card')\nGROUP BY tz.Borough\nORDER BY 1\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_discovery",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

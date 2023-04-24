@@ -1,0 +1,20 @@
+{
+	"name": "5_create_bronze_views",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/ldw"
+		},
+		"content": {
+			"query": "DROP VIEW IF EXISTS bronze.vw_rate_code\nGO\nCREATE VIEW bronze.vw_rate_code\nAS\nSELECT\n    rate_code_id,rate_code\nFROM\n    OPENROWSET(\n        BULK 'raw/rate_code.json',\n        DATA_SOURCE = 'nyc_taxi_src',\n        FORMAT = 'CSV',\n        FIELDTERMINATOR = '0x0b',\n        FIELDQUOTE = '0x0b' ,\n        ROWTERMINATOR = '0x0b'     \n    ) \n    WITH(\n        jsonDoc varchar(max)1\n    )As ratecode\n    CROSS APPLY OPENJSON(jsonDoc)\n    With(\n        rate_code_id SMALLINT,\n        rate_code varchar(20) \n    )\n GO\n SELECT * FROM  bronze.vw_rate_code\n GO\n\n /************************************************/\n DROP VIEW IF EXISTS bronze.vw_payment_type\nGO\nCREATE VIEW bronze.vw_payment_type\nAS\nSELECT\n    payment_type,description\nFROM\n    OPENROWSET(\n        BULK 'raw/payment_type.json',\n        DATA_SOURCE = 'nyc_taxi_src',\n        FORMAT = 'CSV',\n        FIELDTERMINATOR = '0x0b',\n        FIELDQUOTE = '0x0b'        \n    ) \n    WITH(\n        jsonDoc varchar(max)1\n    )As payment\n    CROSS APPLY OPENJSON(jsonDoc)\n    With(\n        payment_type SMALLINT,\n        description varchar(20) '$.payment_type_desc'\n    )\nGO\nSELECT * FROM bronze.vw_payment_type\nGO\n\n/************************************/\n DROP VIEW IF EXISTS bronze.vw_trip_data_green_csv\nGO\nCREATE VIEW bronze.vw_trip_data_green_csv\nAS\nSELECT\n    result.filepath(1) AS [Year]\n    ,result.filepath(2) AS [MONTH]\n    ,result.*\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_csv/year=*/month=*/*.csv',\n        DATA_SOURCE = 'nyc_taxi_src',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0',\n        HEADER_ROW = TRUE\n    )\n    with(\n       VendorID  int,\n       lpep_pickup_datetime datetime2(7),\n       lpep_dropoff_datetime datetime2(7),\n       store_and_fwd_flag CHAR(1),\n       RatecodeID int,\n       PULocationID int,\n       DOLocationID int,\n       passenger_count int,\n       trip_distance FLOAT,\n       fare_amount FLOAT,\n       extra FLOAT,\n       mta_tax FLOAT,\n       tip_amount FLOAT,\n       tolls_amount FLOAT,\n       ehail_fee INT,\n       improvement_surcharge FLOAT,\n       total_amount FLOAT,\n       payment_type INT,\n       trip_type INT,\n       congestion_surcharge FLOAT\n    )AS [result]\nGO\nSELECT top 100 * FROM bronze.vw_trip_data_green_csv where MONTH= 01\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_ldw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

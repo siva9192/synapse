@@ -1,0 +1,20 @@
+{
+	"name": "9_explore_trip_data_green_delta",
+	"properties": {
+		"folder": {
+			"name": "nyc_taxi/discovery"
+		},
+		"content": {
+			"query": "-- using DELTA\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_delta',\n        FORMAT = 'DELTA',\n        Data_Source = 'nyc_taxi_data'        \n    ) AS [result]\n-- to view default datatypes\nEXEC sp_describe_first_result_set N'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK ''raw/trip_data_green_delta'',\n        FORMAT = ''DELTA'',\n        Data_Source = ''nyc_taxi_data''        \n    ) AS [result]\n'\n--set custom datatypes\nEXEC sp_describe_first_result_set N'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK ''raw/trip_data_green_delta'',\n        FORMAT = ''DELTA'',\n        Data_Source = ''nyc_taxi_data''        \n    ) \nwith(\n       VendorID  int,\n       lpep_pickup_datetime datetime2(7),\n       lpep_dropoff_datetime datetime2(7),\n       store_and_fwd_flag CHAR(1),\n       RatecodeID int,\n       PULocationID int,\n       DOLocationID int,\n       passenger_count int,\n       trip_distance FLOAT,\n       fare_amount FLOAT,\n       extra FLOAT,\n       mta_tax FLOAT,\n       tip_amount FLOAT,\n       tolls_amount FLOAT,\n       ehail_fee INT,\n       improvement_surcharge FLOAT,\n       total_amount FLOAT,\n       payment_type INT,\n       trip_type INT,\n       congestion_surcharge FLOAT,\n       year varchar(4),\n       month varchar(2)\n    )AS [result]\n'\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_delta',\n        FORMAT = 'DELTA',\n        Data_Source = 'nyc_taxi_data'        \n    ) \nwith(\n        VendorID  int,\n       lpep_pickup_datetime datetime2(7),\n       lpep_dropoff_datetime datetime2(7),\n       store_and_fwd_flag CHAR(1),\n       RatecodeID int,\n       PULocationID int,\n       DOLocationID int,\n       passenger_count int,\n       trip_distance FLOAT,\n       fare_amount FLOAT,\n       extra FLOAT,\n       mta_tax FLOAT,\n       tip_amount FLOAT,\n       tolls_amount FLOAT,\n       ehail_fee INT,\n       improvement_surcharge FLOAT,\n       total_amount FLOAT,\n       payment_type INT,\n       trip_type INT,\n       congestion_surcharge FLOAT,\n       year varchar(4),\n       month varchar(2)\n    )AS [result]\n--Select only requried columns to reduce cost \nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_delta',\n        FORMAT = 'DELTA',\n        Data_Source = 'nyc_taxi_data'        \n    ) \nwith(\n       tip_amount FLOAT,\n       trip_type INT,\n       year varchar(4),\n       month varchar(2)\n    )AS [result]\n\n-- using where clause\nSELECT\n    count(DISTINCT payment_type)\nFROM\n    OPENROWSET(\n        BULK 'raw/trip_data_green_delta',\n        FORMAT = 'DELTA',\n        Data_Source = 'nyc_taxi_data'        \n    ) AS [result]\nWHERE YEAR = 2020 and month = 01",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "nyc_taxi_discovery",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
